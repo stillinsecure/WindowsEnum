@@ -38,12 +38,12 @@ $standard_commands = [ordered]@{
     'Firewall Config'                             = 'Start-Process "netsh" -ArgumentList "firewall show config" -NoNewWindow -Wait | ft';
     'Current User'                                = 'Write-Host $env:UserDomain\$env:UserName';
     'User Privileges'                             = 'start-process "whoami" -ArgumentList "/priv" -NoNewWindow -Wait | ft';
-    'Local Users'                                 = 'Get-LocalUser | ft Name,Enabled,LastLogon';
+    'Local Users'                                 = 'Get-WmiObject -Class Win32_UserAccount -filter "LocalAccount = True" | ft Name, Description, Disabled';
     'Logged in Users'                             = 'Start-Process "qwinsta" -NoNewWindow -Wait | ft';
     'Credential Manager'                          = 'start-process "cmdkey" -ArgumentList "/list" -NoNewWindow -Wait | ft'
     'User Autologon Registry Items'               = 'Get-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon" | select "Default*" | ft';
-    'Local Groups'                                = 'Get-LocalGroup | ft Name';
-    'Local Administrators'                        = 'Get-LocalGroupMember Administrators | ft Name, PrincipalSource';
+    'Local Groups'                                = 'Get-WmiObject -Class Win32_Group | ft Name';
+    'Local Administrators'                        = 'Get-WmiObject -Class Win32_GroupUser | Where-Object GroupComponent -eq "\\$env:computername\root\cimv2:Win32_Group.Domain=""$env:computername"",Name=""Administrators""" | ft PartComponent';
     'User Directories'                            = 'Get-ChildItem C:\Users | ft Name';
     'Searching for SAM backup files'              = 'Test-Path %SYSTEMROOT%\repair\SAM ; Test-Path %SYSTEMROOT%\system32\config\regback\SAM';
     'Running Processes'                           = 'gwmi -Query "Select * from Win32_Process" | where {$_.Name -notlike "svchost*"} | Select Name, Handle, @{Label="Owner";Expression={$_.GetOwner().User}} | ft -AutoSize';
@@ -76,7 +76,6 @@ function RunCommands($commands) {
         Invoke-Expression $command.Value
     }
 }
-
 
 RunCommands($standard_commands)
 
